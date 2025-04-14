@@ -122,7 +122,7 @@ const LiveMap = () => {
       setError(null);
       
       try {
-        const response = await axios.get(`${API_URL}/auth/getAllRoutes`);
+        const response = await axios.get(`${API_URL}/getAllRoutes`);
         setRoutes(response.data.routes || []);
       } catch (err) {
         setError("Failed to load routes. Please try again later.");
@@ -144,7 +144,7 @@ const LiveMap = () => {
       setError(null);
       
       try {
-        const response = await axios.get(`${API_URL}/auth/getStopsByRoute/${routeId}`);
+        const response = await axios.get(`${API_URL}/getStopsByRoute/${routeId}`);
         const stopData = response.data.stops || [];
         setStops(stopData);
 
