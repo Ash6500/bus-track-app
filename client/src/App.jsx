@@ -14,6 +14,9 @@ import { useAuth } from './context/context+reducer.jsx';
 
 import AddNewRoute from './pages/AddNewRoute.jsx';
 import ShowDetails from './pages/ShowDetails.jsx';
+import AddBus from './pages/AddBus.jsx';
+import BusDriverTable from './pages/BusDriverTable.jsx';
+import EditBus from './components/EditBus.jsx';
 
 export default function App() {
   const{ state } = useAuth();
@@ -33,9 +36,12 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="stats" element={<Stats />} />
           <Route path="home" element={<Home />} />
-          <Route path="livelocation" element={<LiveMap />} />
+          <Route path="livelocation" element={<LiveMap />} />addbus
           <Route path="addnewroute" element={<AddNewRoute/>} />
           <Route path="showDetails/:routeId" element={<ShowDetails/>} />
+          <Route path="addbus" element={<AddBus/>} />
+          <Route path="/admin/bus-driver-table" element={<BusDriverTable/>} />
+          <Route path="/edit-bus/:id" element={<EditBus/>} />
           <Route path="*" element={<h1>404 - Page Not Found</h1>} />
         </Route>
       )}

@@ -22,7 +22,7 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 // ✅ Fix Express CORS (For API Requests)
 app.use(cors({
     origin: FRONTEND_ORIGIN,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT"],
     credentials: true, // Allow cookies & authentication headers
 }));
 

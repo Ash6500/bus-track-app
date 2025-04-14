@@ -1,24 +1,169 @@
 import Bus from "../models/busSchema.js";
 import Route from "../models/routesSchema.js"; // Import the Route model
 import Stop from "../models/stopsSchema.js";
-const addNewBus = async (request, response, next) => {
-    try{
-        const {busNumber, driverId, capacity, routeId} = request.body();
+import User from "../models/userSchema.js";
 
-        const bus = await Bus.findOne({busNumber});
 
-        if(bus.busNumber){
-            return response.status(400).json({message: "Bus Number already exists"});
-        }
+export const getDriver = async (req, res) => {
+  try {
+    const { role } = req.params;
 
-        const addBus = await Bus.create({busNumber, driverId, capacity, routeId});
-        if(addBus){
-            
-        }
-    }catch(error){
-        console.log(error);
+    if (!['admin', 'user', 'driver'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role type' });
     }
-}
+
+    const users = await User.find({ role }).select('name identity role _id');
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error('Error fetching users by role:', err);
+    res.status(500).json({ error: 'Server error while fetching users' });
+  }
+};
+
+
+export const addBus = async (req, res) => {
+    try {
+      const { busNumber, driverId, capacity, routeId, status } = req.body;
+  
+      // ✅ Validate required fields
+      if (!busNumber || !driverId || !capacity || !routeId) {
+        return res.status(400).json({ error: "Missing required fields." });
+      }
+  
+      // ✅ Check if the busNumber already exists
+      const existingBus = await Bus.findOne({ busNumber });
+      if (existingBus) {
+        return res.status(409).json({ error: "Bus number already exists." });
+      }
+  
+      // ✅ Verify driver exists and is a 'driver'
+      const driver = await User.findById(driverId);
+      if (!driver || driver.role !== "driver") {
+        return res.status(400).json({ error: "Invalid driver ID or user is not a driver." });
+      }
+  
+      // ✅ Verify the route exists
+      const route = await Route.findById(routeId);
+      if (!route) {
+        return res.status(404).json({ error: "Route not found." });
+      }
+  
+      // ✅ Create and save the new bus
+      const newBus = new Bus({
+        busNumber,
+        driverId,
+        capacity,
+        routeId,
+        status: status || "inactive",
+      });
+  
+      await newBus.save();
+  
+      return res.status(201).json({ message: "Bus added successfully!", bus: newBus });
+    } catch (error) {
+      console.error("Error adding bus:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  export const getAllBuses = async (req, res) => {
+    try {
+      const buses = await Bus.find()
+        .populate({
+          path: 'driverId',
+          select: 'name identity phone role', // Only get needed fields
+        })
+        .populate({
+          path: 'routeId',
+          select: 'routeName source destination', // Add any route info needed
+        })
+        .sort({ createdAt: -1 }); // Latest first
+  
+      return res.status(200).json({ buses });
+    } catch (error) {
+      console.error('Error fetching buses:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  };
+
+  export const updateBus = async (req, res) => {
+    try {
+      const busId = req.params.busId;  // Fetching busId from URL parameters
+      const { driverId, capacity, routeId, status } = req.body;
+  
+      // Validate if busId is present
+      if (!busId) {
+        return res.status(400).json({ error: 'Bus ID is required' });
+      }
+  
+      // Find the bus by its ID
+      const bus = await Bus.findById(busId);
+      if (!bus) {
+        return res.status(404).json({ error: 'Bus not found' });
+      }
+  
+      // Optionally, check if the driver exists if provided
+      if (driverId) {
+        const driver = await User.findById(driverId);
+        if (!driver || driver.role !== 'driver') {
+          return res.status(400).json({ error: 'Invalid driver ID or user is not a driver.' });
+        }
+        bus.driverId = driverId;
+      }
+  
+      // Update capacity, routeId, and status only if provided
+      if (capacity) bus.capacity = capacity;
+      if (routeId) bus.routeId = routeId;
+      if (status) bus.status = status;
+  
+      // Save the updated bus details
+      await bus.save();
+  
+      return res.status(200).json({ message: 'Bus updated successfully!', bus });
+    } catch (error) {
+      console.error('Error updating bus:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  };
+
+
+export const assignDriverToBus = async (req, res) => {
+  try {
+    const { busId, driverId } = req.body;
+
+    // ✅ Validate inputs
+    if (!busId || !driverId) {
+      return res.status(400).json({ error: "Missing busId or driverId." });
+    }
+
+    // ✅ Check if the driver exists and is a driver
+    const driver = await User.findById(driverId);
+    if (!driver || driver.role !== "driver") {
+      return res.status(400).json({ error: "Invalid driver ID or user is not a driver." });
+    }
+
+    // ✅ Check if the driver is already assigned to a bus
+    const alreadyAssigned = await Bus.findOne({ driverId });
+    if (alreadyAssigned) {
+      return res.status(409).json({ error: "Driver is already assigned to another bus." });
+    }
+
+    // ✅ Find the bus and update its driverId
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).json({ error: "Bus not found." });
+    }
+
+    bus.driverId = driverId;
+    await bus.save();
+
+    return res.status(200).json({ message: "Driver assigned to bus successfully.", bus });
+  } catch (error) {
+    console.error("Error assigning driver to bus:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 
 // ✅ ADD A NEW ROUTE
