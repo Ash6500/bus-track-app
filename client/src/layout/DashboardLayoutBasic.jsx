@@ -65,6 +65,12 @@ export default function DashboardLayoutBasic({ window }) {
       icon: <MapIcon />,
       path: "/addnewroute",
       active: router.pathname === "/addnewroute",
+    },{
+      segment: "addbus",
+      title: "Add Bus",
+      icon: <MapIcon />,
+      path: "/addbus",
+      active: router.pathname === "/addbus",
     },
     { kind: "divider" },
   ];

@@ -16,6 +16,16 @@ const app = express();
 const port = process.env.PORT || 3001;
 const server = createServer(app);
 
+// Configure CORS for Express and Socket.IO
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+
+// ✅ Fix Express CORS (For API Requests)
+app.use(cors({
+    origin: FRONTEND_ORIGIN,
+    methods: ["GET", "POST", "PUT"],
+    credentials: true, // Allow cookies & authentication headers
+}));
+
 const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:5174",
