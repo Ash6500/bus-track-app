@@ -67,35 +67,6 @@ export default function DashboardLayoutBasic({ window }) {
       active: router.pathname === "/addnewroute",
     },
     { kind: "divider" },
-    { kind: "header", title: "Analytics" },
-    {
-      segment: "reports",
-      title: "Reports",
-      icon: <BarChartIcon />,
-      children: [
-        {
-          segment: "sales",
-          title: "Sales",
-          icon: <DescriptionIcon />,
-          path: "/reports/sales",
-          active: router.pathname === "/reports/sales",
-        },
-        {
-          segment: "traffic",
-          title: "Traffic",
-          icon: <DescriptionIcon />,
-          path: "/reports/traffic",
-          active: router.pathname === "/reports/traffic",
-        },
-      ],
-    },
-    {
-      segment: "integrations",
-      title: "Integrations",
-      icon: <LayersIcon />,
-      path: "/integrations",
-      active: router.pathname === "/integrations",
-    },
   ];
   
   return (
