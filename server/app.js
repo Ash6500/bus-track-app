@@ -7,7 +7,6 @@ import { dirname, join } from "path";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import authRoutes from "./routes/AuthRoutes.js";
-
 import { AdminRouter } from "./routes/AdminRoutes.js";
 
 config(); // Load env variables
@@ -16,22 +15,15 @@ const app = express();
 const port = process.env.PORT || 3001;
 const server = createServer(app);
 
-// Configure CORS for Express and Socket.IO
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
-
-// ✅ Fix Express CORS (For API Requests)
-app.use(cors({
-    origin: FRONTEND_ORIGIN,
-    methods: ["GET", "POST", "PUT"],
-    credentials: true, // Allow cookies & authentication headers
-}));
-
+// 🔐 Allowed origins for both Express and Socket.IO
 const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-  ];
-  
-  app.use(cors({
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
+// ✅ Express CORS Middleware
+app.use(
+  cors({
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -39,74 +31,67 @@ const allowedOrigins = [
         callback(new Error("Not allowed by CORS"));
       }
     },
+    methods: ["GET", "POST", "PUT"],
+    credentials: true,
+  })
+);
+
+// ✅ Socket.IO Initialization with CORS
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:5173", // Vite frontend
+      "http://localhost:5174",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
-  }));
-  
+    transports: ['websocket', 'polling'], // ✅ Allow both transports
+  },
+});
 
-  const io = new Server(server, {
-    cors: {
-      origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS for Socket.IO"));
-        }
-      },
-      methods: ["GET", "POST"],
-      credentials: true,
-    },
-  });
-
-
-
-
-// Middlewares
+// ✅ Middleware Setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ API Routes
 app.use("/tracker/auth", authRoutes);
 app.use("/tracker/admin", AdminRouter);
 
-// __dirname replacement for ESM
+// ✅ Static & View Setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Serve static files
 app.use(express.static(join(__dirname, "public")));
+app.set("view engine", "ejs");
+app.set("views", join(__dirname, "views"));
 
-app.set('view engine', 'ejs');
-
-// Set the views directory
-app.set('views', join(__dirname, 'views'));
-
-// Socket API
+// ✅ WebSocket Logic
 io.on("connection", (socket) => {
-    console.log(`✅ User connected: ${socket.id}`);
+  console.log(`✅ User connected: ${socket.id}`);
 
-    socket.on("send-location", (data) => {
-        console.log(`📍 Location received from ${socket.id}:`, data);
-        io.emit("receive-location", { id: socket.id, ...data });
-    });
+  socket.on("send-location", (data) => {
+    console.log(`📍 Location received from ${socket.id}:`, data);
+    io.emit("receive-location", { id: socket.id, ...data });
+  });
 
-    socket.on("disconnect", () => {
-        console.log(`❌ User disconnected: ${socket.id}`);
-        io.emit("user-disconnect", socket.id);
-    });
+  socket.on("disconnect", () => {
+    console.log(`❌ User disconnected: ${socket.id}`);
+    io.emit("user-disconnect", socket.id);
+  });
 
-    socket.onAny((event, ...args) => {
-        console.log(`📩 Event received: ${event}`, args);
-      });
+  socket.onAny((event, ...args) => {
+    console.log(`📩 Event received: ${event}`, args);
+  });
 });
 
-// Basic Route
+// ✅ Root Route
 app.get("/", (req, res) => {
-    res.render("index");
+  res.render("index");
 });
 
-// Start Server
+// ✅ Start Server
 server.listen(port, () => {
-    console.log(`🚀 Server with Socket.io is running on http://localhost:${port}`);
+  console.log(`🚀 Server with Socket.io is running on http://localhost:${port}`);
 });
 
-// Connect to MongoDB
+// ✅ Connect to MongoDB
 dbConnect();

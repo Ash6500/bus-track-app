@@ -92,6 +92,16 @@ const AddBus = () => {
 
   return (
     <Paper elevation={3} sx={{ maxWidth: 600, mx: 'auto', mt: 6, p: 4 }}>
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+  <Button 
+    variant="outlined" 
+    color="secondary" 
+    onClick={() => navigate('/admin/bus-driver-table')}
+  >
+    View Assigned Drivers
+  </Button>
+</Box>
+
       <Typography variant="h5" gutterBottom>
         Add New Bus
       </Typography>

@@ -235,3 +235,44 @@ export const uploadStops = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+export const getDashboardStats = async (req, res) => {
+  try {
+    // Count total buses
+    const totalBuses = await Bus.countDocuments();
+
+    // Count total drivers
+    const totalDrivers = await User.countDocuments({ role: "driver" });
+
+    // Count total routes
+    const totalRoutes = await Route.countDocuments();
+
+    // Count active trips (buses currently marked as "active")
+    const activeTrips = await Bus.countDocuments({ status: "active" });
+
+    return res.status(200).json({
+      totalBuses,
+      totalDrivers,
+      totalRoutes,
+      activeTrips,
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getAllDrivers = async (req, res) => {
+  try {
+    const drivers = await User.find({ role: "driver" }).select("-password"); // Exclude password field
+    
+    return res.status(200).json({
+      success: true,
+      count: drivers.length,
+      drivers,
+    });
+  } catch (error) {
+    console.error("Error fetching drivers:", error);
+    return res.status(500).json({ error: "Failed to retrieve drivers" });
+  }
+};
