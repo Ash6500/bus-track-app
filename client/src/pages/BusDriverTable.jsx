@@ -57,6 +57,17 @@ const BusDriverTable = () => {
   return (
     <Box mt={5} px={3}>
       <Typography variant="h5" gutterBottom>Bus & Driver Details</Typography>
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+    <Tooltip title="Add New Bus">
+      <IconButton
+        color="primary"
+        onClick={() => navigate('/addbus')}
+        sx={{ border: '1px solid #1976d2', borderRadius: '4px', px: 2 }}
+      >
+        <Typography fontWeight="bold" color="primary">+ Add Bus</Typography>
+      </IconButton>
+    </Tooltip>
+  </Box>
       <TableContainer component={Paper}>
         <Table>
           <TableHead sx={{ backgroundColor: '#f5f5f5' }}>

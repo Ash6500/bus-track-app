@@ -18,7 +18,7 @@ const stopSchema = new Schema({
   },
   landmark: {
     type: String,
-  },
+  }
 });
 
 // Create a 2dsphere index for geospatial queries
