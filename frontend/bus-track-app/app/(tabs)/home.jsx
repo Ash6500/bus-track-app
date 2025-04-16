@@ -7,16 +7,19 @@ import {
   FlatList,
   SafeAreaView,
   Keyboard,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { API_URL } from '../../utils/config';
-
+import { useRouter } from 'expo-router'; // Changed from react-navigation
 
 export default function HomeScreen() {
+  const router = useRouter(); // Changed from useNavigation
   const [fromStation, setFromStation] = useState('');
   const [toStation, setToStation] = useState('');
   const [foundRoutes, setFoundRoutes] = useState([]);
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const swapStations = () => {
     setFromStation(toStation);
@@ -25,9 +28,11 @@ export default function HomeScreen() {
 
   const handleFindTrains = async () => {
     Keyboard.dismiss();
+    setLoading(true);
 
     if (!fromStation || !toStation) {
       alert('Please enter both stations.');
+      setLoading(false);
       return;
     }
 
@@ -35,50 +40,83 @@ export default function HomeScreen() {
       const routesRes = await fetch(`${API_URL}/tracker/auth/getAllRoutes`);
       const routes = await routesRes.json();
 
-      console.log(routesRes);
-      console.log(fromStation)
-      console.log(toStation)
-      
+      const busesRes = await fetch(`${API_URL}/tracker/admin/getAllBuses`);
+      const buses = await busesRes.json();
 
       const matchingRoutes = [];
       
-      for (const route of routes.routes) {
-        const stopsRes = await fetch(`${API_URL}/tracker/auth/getStopsByRoute/${route._id}`);
-        const stops = await stopsRes.json();
+      for (const route of routes.routes || []) {
+        try {
+          const stopsRes = await fetch(`${API_URL}/tracker/auth/getStopsByRoute/${route._id}`);
+          const stops = await stopsRes.json();
 
-        // console.log(stops.stops);
-        
-        
-        const stopNames = stops.stops.map(stop => stop?.stopId.name.toLowerCase());
-        const fromIndex = stopNames.includes(fromStation.toLowerCase());
-        const toIndex = stopNames.includes(toStation.toLowerCase());
-        console.log(stopNames);
-        console.log(`Route: ${route.name}, Stops:`, stopNames);
-        console.log(`From Index: ${fromIndex}, To Index: ${toIndex}`);
-        if (fromIndex && toIndex) {
-          matchingRoutes.push({
-            id: route._id,
-            name: route.routeName
-          });
+          const stopNames = (stops.stops || []).map(stop => 
+            (stop?.stopId?.name || '').toLowerCase()
+          );
+          
+          const fromLower = (fromStation || '').toLowerCase();
+          const toLower = (toStation || '').toLowerCase();
+          
+          const hasFromStation = stopNames.includes(fromLower);
+          const hasToStation = stopNames.includes(toLower);
+
+          if (hasFromStation && hasToStation) {
+            const busesForRoute = (buses.buses || []).filter(bus => 
+              bus?.routeId?._id === route._id
+            );
+            
+            busesForRoute.forEach(bus => {
+              matchingRoutes.push({
+                id: route._id,
+                routeName: route.routeName || 'Unknown Route',
+                busNumber: bus.busNumber || 'Unknown Bus',
+                busId: bus._id,
+                fromStation: fromStation,
+                toStation: toStation
+              });
+            });
+          }
+        } catch (err) {
+          console.error(`Error processing route ${route._id}:`, err);
+          continue;
         }
       }
-      console.log("+++++++++++++++++++++++++++=");
       
       setFoundRoutes(matchingRoutes);
-      console.log(matchingRoutes)
 
       if (matchingRoutes.length === 0) {
         alert('No matching buses found.');
       }
     } catch (err) {
-      console.error(err);
-      alert('Error fetching data.');
+      console.error('Main error:', err);
+      alert('Error fetching data. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredRoutes = foundRoutes.filter(route =>
-    route.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredRoutes = (foundRoutes || []).filter(route => {
+    const busNumber = (route.busNumber || '').toLowerCase();
+    const routeName = (route.routeName || '').toLowerCase();
+    const searchTerm = (searchText || '').toLowerCase();
+    
+    return busNumber.includes(searchTerm) || routeName.includes(searchTerm);
+  });
+
+  const handleRoutePress = (route) => {
+    router.push({
+      pathname: '/tracking',
+      params: {
+        busId: route.busId,
+        busNumber: route.busNumber,
+        routeId: route.id,
+        routeName: route.routeName,
+        fromStation: route.fromStation,
+        toStation: route.toStation,
+        stops: JSON.stringify(route.stops),
+      }
+    });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#2b2b2b', paddingHorizontal: 16 }}>
@@ -97,9 +135,11 @@ export default function HomeScreen() {
             placeholderTextColor="#aaa"
             style={{ color: 'white', flex: 1 }}
           />
-          <TouchableOpacity onPress={() => setFromStation('')}>
-            <Ionicons name="close" size={20} color="white" />
-          </TouchableOpacity>
+          {fromStation ? (
+            <TouchableOpacity onPress={() => setFromStation('')}>
+              <Ionicons name="close" size={20} color="white" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         <View style={{ borderLeftWidth: 2, borderStyle: 'dotted', borderColor: 'white', height: 16, marginLeft: 4, marginBottom: 8 }} />
@@ -112,9 +152,11 @@ export default function HomeScreen() {
             placeholderTextColor="#aaa"
             style={{ color: 'white', flex: 1 }}
           />
-          <TouchableOpacity onPress={() => setToStation('')}>
-            <Ionicons name="close" size={20} color="white" />
-          </TouchableOpacity>
+          {toStation ? (
+            <TouchableOpacity onPress={() => setToStation('')}>
+              <Ionicons name="close" size={20} color="white" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Swap Button */}
@@ -136,26 +178,39 @@ export default function HomeScreen() {
       {/* Find Buses Button */}
       <TouchableOpacity
         onPress={handleFindTrains}
-        style={{ backgroundColor: '#f49b33', paddingVertical: 12, borderRadius: 8, marginBottom: 16 }}
+        disabled={loading}
+        style={{ 
+          backgroundColor: '#f49b33', 
+          paddingVertical: 12, 
+          borderRadius: 8, 
+          marginBottom: 16,
+          opacity: loading ? 0.7 : 1
+        }}
       >
-        <Text style={{ color: 'white', textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>
-          Find Buses
-        </Text>
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={{ color: 'white', textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>
+            Find Buses
+          </Text>
+        )}
       </TouchableOpacity>
 
       {/* Search Bar for Found Buses */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#333', borderRadius: 8, marginBottom: 16, paddingHorizontal: 12, paddingVertical: 8 }}>
-        <TextInput
-          placeholder="Search Bus Number"
-          placeholderTextColor="#aaa"
-          style={{ flex: 1, color: 'white' }}
-          value={searchText}
-          onChangeText={setSearchText}
-        />
-        <TouchableOpacity>
-          <Ionicons name="search" size={22} color="white" />
-        </TouchableOpacity>
-      </View>
+      {foundRoutes.length > 0 && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#333', borderRadius: 8, marginBottom: 16, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <TextInput
+            placeholder="Search Bus Number or Route"
+            placeholderTextColor="#aaa"
+            style={{ flex: 1, color: 'white' }}
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          <TouchableOpacity>
+            <Ionicons name="search" size={22} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Results */}
       <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>
@@ -164,13 +219,28 @@ export default function HomeScreen() {
 
       <FlatList
         data={foundRoutes.length > 0 ? filteredRoutes : searchHistory}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         renderItem={({ item }) => (
-          <TouchableOpacity style={{ backgroundColor: '#333', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-            <Text style={{ color: 'white', fontSize: 16 }}>{item.id}  {item.name}</Text>
-            <Text style={{ color: '#aaa', fontSize: 13 }}>{item.route}</Text>
+          <TouchableOpacity 
+            style={{ backgroundColor: '#333', borderRadius: 8, padding: 12, marginBottom: 8 }}
+            onPress={() => handleRoutePress(item)}
+          >
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+              Bus: {item.busNumber || item.name}
+            </Text>
+            <Text style={{ color: 'white', fontSize: 14, marginTop: 4 }}>
+              Route ID: {item.id}
+            </Text>
+            <Text style={{ color: '#aaa', fontSize: 13, marginTop: 2 }}>
+              {item.routeName || item.route}
+            </Text>
           </TouchableOpacity>
         )}
+        ListEmptyComponent={
+          <Text style={{ color: '#aaa', textAlign: 'center', marginTop: 20 }}>
+            {foundRoutes.length === 0 ? 'No search history available' : 'No buses match your search'}
+          </Text>
+        }
       />
     </SafeAreaView>
   );
