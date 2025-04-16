@@ -2,7 +2,7 @@ import User from "../models/userSchema.js";
 import jwt from "jsonwebtoken";
 import { config } from "dotenv";
 import Route from "../models/routesSchema.js";
-
+import GpsLog from "../models/gps_logs.js";
 config();
 
 const isEmail = (identity) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity);
@@ -199,7 +199,7 @@ export const uploadLogs = async (req, res) => {
     if (!logs?.length) return res.sendStatus(400);
     
     // Insert logs with device reference
-    const result = await Log.insertMany(
+    const result = await GpsLog.insertMany(
       logs.map(log => ({ ...log, device: deviceId })),
       { ordered: false }
     );
