@@ -8,7 +8,7 @@ import bus from "../assets/bus.png";
 import busStop from "../assets/busStop.png";
 
 // Constants
-const SERVER_ORIGIN = "https://collegebus-tracker.onrender.com"; //import.meta.env.VITE_SERVER_ORIGIN || 
+const SERVER_ORIGIN = "https://bus-track-app.onrender.com"; //import.meta.env.VITE_SERVER_ORIGIN || 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "pk.eyJ1IjoiMjFiY3NlODQiLCJhIjoiY205OXE1czNrMGVhODJpc2Vrd3J3NWVsZCJ9.cRLslId5-PsXFJBMZWTc2w";
 const API_URL = import.meta.env.VITE_SERVER_URL;
 

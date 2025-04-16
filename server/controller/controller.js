@@ -188,3 +188,29 @@ export const getStopsByRoute = async (req, res) => {
       return res.status(500).json({ error: "Failed to fetch stops" });
   }
 };
+
+
+// Upload logs
+export const uploadLogs = async (req, res) => {
+  try {
+    const { logs, deviceId } = req.body;
+    
+    // Minimal validation
+    if (!logs?.length) return res.sendStatus(400);
+    
+    // Insert logs with device reference
+    const result = await Log.insertMany(
+      logs.map(log => ({ ...log, device: deviceId })),
+      { ordered: false }
+    );
+
+    return res.json({ 
+      success: true,
+      count: result.length 
+    });
+
+  } catch (err) {
+    console.error('Log upload failed:', err);
+    return res.sendStatus(500);
+  }
+};
