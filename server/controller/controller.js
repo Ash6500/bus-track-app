@@ -2,7 +2,7 @@ import User from "../models/userSchema.js";
 import jwt from "jsonwebtoken";
 import { config } from "dotenv";
 import Route from "../models/routesSchema.js";
-
+import GpsLog from "../models/gps_logs.js";
 config();
 
 const isEmail = (identity) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity);
@@ -186,5 +186,31 @@ export const getStopsByRoute = async (req, res) => {
   } catch (error) {
       console.error("Error fetching stops:", error);
       return res.status(500).json({ error: "Failed to fetch stops" });
+  }
+};
+
+
+// Upload logs
+export const uploadLogs = async (req, res) => {
+  try {
+    const { logs, deviceId } = req.body;
+    
+    // Minimal validation
+    if (!logs?.length) return res.sendStatus(400);
+    
+    // Insert logs with device reference
+    const result = await GpsLog.insertMany(
+      logs.map(log => ({ ...log, device: deviceId })),
+      { ordered: false }
+    );
+
+    return res.json({ 
+      success: true,
+      count: result.length 
+    });
+
+  } catch (err) {
+    console.error('Log upload failed:', err);
+    return res.sendStatus(500);
   }
 };
