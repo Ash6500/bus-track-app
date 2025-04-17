@@ -64,12 +64,39 @@ app.use(express.static(join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", join(__dirname, "views"));
 
+//Upload periodically in mongoDb
+// const gpsBuffer = [];
+// const FLUSH_INTERVAL_MS = 30000;// 30 seconds interval of flush to mongo
+
+// setInterval(async () => {
+//   if (gpsBuffer.length > 0) {
+//     try {
+//       await Log.insertMany(gpsBuffer);
+//       console.log(`✅ Flushed ${gpsBuffer.length} GPS logs to MongoDB`);
+//       gpsBuffer.length = 0;
+//     } catch (err) {
+//       console.error("❌ Error inserting GPS logs:", err);
+//     }
+//   }
+// }, FLUSH_INTERVAL_MS);
+
 // ✅ WebSocket Logic
 io.on("connection", (socket) => {
   console.log(`✅ User connected: ${socket.id}`);
 
   socket.on("send-location", (data) => {
     console.log(`📍 Location received from ${socket.id}:`, data);
+    // const { latitude, longitude, speed = 0, eta_minutes = 10 } = data;
+
+    // // Add to buffer
+    // gpsBuffer.push({
+    //   lat: latitude,
+    //   long: longitude,
+    //   speed,
+    //   eta_minutes,
+    //   timestamp: new Date(),
+    // });
+    
     io.emit("receive-location", { id: socket.id, ...data });
   });
 
@@ -82,6 +109,7 @@ io.on("connection", (socket) => {
     console.log(`📩 Event received: ${event}`, args);
   });
 });
+
 
 // ✅ Root Route
 app.get("/", (req, res) => {

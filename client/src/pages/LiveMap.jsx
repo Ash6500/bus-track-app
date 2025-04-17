@@ -8,7 +8,7 @@ import bus from "../assets/bus.png";
 import busStop from "../assets/busStop.png";
 
 // Constants
-const SERVER_ORIGIN = "https://collegebus-tracker.onrender.com"; //import.meta.env.VITE_SERVER_ORIGIN || 
+const SERVER_ORIGIN = import.meta.env.VITE_SERVER_ORIGIN; 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "pk.eyJ1IjoiMjFiY3NlODQiLCJhIjoiY205OXE1czNrMGVhODJpc2Vrd3J3NWVsZCJ9.cRLslId5-PsXFJBMZWTc2w";
 const API_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -18,11 +18,14 @@ const BUS_ICON = L.icon({
   iconAnchor: [15, 15]
 });
 
+
+
 const STOP_ICON = L.icon({
   iconUrl: busStop,
   iconSize: [20, 20],
   iconAnchor: [10, 10]
 });
+
 
 const INITIAL_VIEW = [20.2961, 85.8245]; // Bhubaneswar coordinates
 const ZOOM_LEVEL = 14;
