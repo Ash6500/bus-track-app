@@ -104,6 +104,8 @@ export default function HomeScreen() {
   });
 
   const handleRoutePress = (route) => {
+    console.log('========')
+    console.log(route)
     router.push({
       pathname: '/tracking',
       params: {
@@ -116,6 +118,7 @@ export default function HomeScreen() {
         stops: JSON.stringify(route.stops),
       }
     });
+    
   };
 
   return (
