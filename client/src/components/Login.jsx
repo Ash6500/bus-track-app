@@ -32,19 +32,18 @@ export default function Login() {
 		if (validateLogin()) {
 		  try {
 			const response = await apiClient.post(
-			  "/signin",
+			  "auth/signin",
 			  { identity: email, password },
 			  { withCredentials: true }
 			);
 	  
-			console.log({ response });
-	  
-			if (response.data.id) {
+			if (response.data.id  && response.data.role == "admin") {
 			  // Dispatch login success action (assuming you have an action)
 			  dispatch({ type: "LOGIN", payload: response.data });
-				console.log(state.isAuthenticated);
 			  // Navigate to the dashboard
 			  navigate("/dashboard");
+			}else{
+			alert("Admin Login Failed.");
 			}
 		  } catch (error) {
 			console.error("Login failed:", error.response?.data || error.message);

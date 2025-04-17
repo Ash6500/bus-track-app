@@ -1,31 +1,30 @@
-import { Schema, model } from 'mongoose';
+import mongoose from "mongoose";
 
-const logSchema = new Schema({
-  eventType: {
-    type: String,
-    enum: ['location_update', 'status_change', 'error', 'info', 'warning'],
+const logSchema = new mongoose.Schema({
+  lat: {
+    type: Number,
     required: true,
   },
-  details: {
-    type: String,
+  long: {
+    type: Number,
     required: true,
   },
-  relatedId: {
-    type: Schema.Types.ObjectId,
-    refPath: 'relatedModel',
-  },
-  relatedModel: {
-    type: String,
-    enum: ['Bus', 'User', 'Trip', 'Route'], // Dynamic reference for flexibility
-  },
-  metadata: {
-    type: Schema.Types.Mixed, // Store additional flexible data (like location)
+  speed: {
+    type: Number,
+    required: true,
   },
   timestamp: {
     type: Date,
+    required: true,
     default: Date.now,
   },
+  eta_minutes: {
+    type: Number,
+    required: true,
+  },
+}, {
+  timestamps: true, // adds createdAt and updatedAt fields
 });
 
-const Log = model('Log', logSchema);
+const Log = mongoose.model("Log", logSchema);
 export default Log;
